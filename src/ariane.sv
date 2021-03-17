@@ -824,7 +824,9 @@ module ariane import ariane_pkg::*; #(
 `endif
 
   initial begin
-    f = $fopen("trace_hart_00.dasm", "w");
+    // STDOUT == 32'h8000_0001
+    // STDERR == 32'h8000_0002
+    f = 32'h8000_0002; // $fopen("trace_hart_00.dasm", "w");
   end
 
 `ifdef DROMAJO
@@ -871,6 +873,7 @@ module ariane import ariane_pkg::*; #(
       end
       for (int i = 0; i < NR_COMMIT_PORTS; i++) begin
         if (commit_ack[i] && !commit_instr_id_commit[i].ex.valid) begin
+          // < Actual Cycle > < Nb Of cycles Spent on this insn > < Mode > <0xOpCode> <DASM(OpCode)>
           $fwrite(f, "%d 0x%0h %s (0x%h) DASM(%h)\n", cycles, commit_instr_id_commit[i].pc, mode, commit_instr_id_commit[i].ex.tval[31:0], commit_instr_id_commit[i].ex.tval[31:0]);
         end else if (commit_ack[i] && commit_instr_id_commit[i].ex.valid) begin
           if (commit_instr_id_commit[i].ex.cause == 2) begin
