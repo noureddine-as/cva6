@@ -195,6 +195,30 @@ module csr_regfile import ariane_pkg::*; #(
                         csr_rdata = {{riscv::XLEN-7{1'b0}}, fcsr_q.fprec};
                     end
                 end
+                // VPT related registers --------------------------------------------------------
+                // CSR_FVPT_STATUS @TODO rename FTRAN to FVPT_STATUS
+                riscv::CSR_FVPT_PREC_F: begin
+                    if (mstatus_q.fs == riscv::Off) begin
+                        read_access_exception = 1'b1;
+                    end else begin
+                        csr_rdata = fcsr_q.fvpt_prec_f;
+                    end
+                end
+                riscv::CSR_FVPT_PREC_D: begin
+                    if (mstatus_q.fs == riscv::Off) begin
+                        read_access_exception = 1'b1;
+                    end else begin
+                        csr_rdata = fcsr_q.fvpt_prec_d;
+                    end
+                end
+                riscv::CSR_FVPT_EXEC_MODE: begin
+                    if (mstatus_q.fs == riscv::Off) begin
+                        read_access_exception = 1'b1;
+                    end else begin
+                        csr_rdata = fcsr_q.fvpt_exec_mode;
+                    end
+                end
+                // -----------------------------------------------------------------------------
                 // debug registers
                 riscv::CSR_DCSR:               csr_rdata = {{riscv::XLEN-32{1'b0}}, dcsr_q};
                 riscv::CSR_DPC:                csr_rdata = dpc_q;
@@ -436,6 +460,39 @@ module csr_regfile import ariane_pkg::*; #(
                         flush_o = 1'b1;
                     end
                 end
+                // VPT related registers --------------------------------------------------------
+                // CSR_FVPT_STATUS @TODO rename FTRAN to FVPT_STATUS
+                riscv::CSR_FVPT_PREC_F: begin
+                    if (mstatus_q.fs == riscv::Off) begin
+                        update_access_exception = 1'b1;
+                    end else begin
+                        dirty_fp_state_csr = 1'b1;
+                        fcsr_d.fvpt_prec_f = csr_wdata; // [6:0]; // ignore writes to reserved space
+                        // this instruction has side-effects
+                        flush_o = 1'b1;
+                    end
+                end
+                riscv::CSR_FVPT_PREC_D: begin
+                    if (mstatus_q.fs == riscv::Off) begin
+                        update_access_exception = 1'b1;
+                    end else begin
+                        dirty_fp_state_csr = 1'b1;
+                        fcsr_d.fvpt_prec_d = csr_wdata; // [6:0]; // ignore writes to reserved space
+                        // this instruction has side-effects
+                        flush_o = 1'b1;
+                    end
+                end
+                riscv::CSR_FVPT_EXEC_MODE: begin
+                    if (mstatus_q.fs == riscv::Off) begin
+                        update_access_exception = 1'b1;
+                    end else begin
+                        dirty_fp_state_csr = 1'b1;
+                        fcsr_d.fvpt_exec_mode = csr_wdata; // [6:0]; // ignore writes to reserved space
+                        // this instruction has side-effects
+                        flush_o = 1'b1;
+                    end
+                end
+                // -----------------------------------------------------------------
                 // debug CSR
                 riscv::CSR_DCSR: begin
                     dcsr_d = csr_wdata[31:0];

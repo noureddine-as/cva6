@@ -328,6 +328,10 @@ package riscv;
         CSR_FRM            = 12'h002,
         CSR_FCSR           = 12'h003,
         CSR_FTRAN          = 12'h800,
+        // CSR_FVPT_STATUS     0x800  // @TODO Rename FTRAN as FVPT_STATUS
+        CSR_FVPT_PREC_F    = 12'h801, // VPT Registers : float precision
+        CSR_FVPT_PREC_D    = 12'h802, // VPT Registers : double precision
+        CSR_FVPT_EXEC_MODE = 12'h803, // VPT Registers : execution mode, for instrumentation purposes
         // Supervisor Mode CSRs
         CSR_SSTATUS        = 12'h100,
         CSR_SIE            = 12'h104,
@@ -520,6 +524,12 @@ package riscv;
         logic [6:0]   fprec;     // div/sqrt precision control
         logic [2:0]   frm;       // float rounding mode
         logic [4:0]   fflags;    // float exception flags
+        // VPT Custom Registers ---------------------------------
+        // logic [63:0]  vpt_status;
+        logic [63:0]  fvpt_prec_f;
+        logic [63:0]  fvpt_prec_d;
+        logic [63:0]  fvpt_exec_mode;
+        // -----------------------------------------------------
     } fcsr_t;
 
     // PMP
