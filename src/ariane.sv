@@ -810,6 +810,7 @@ module ariane import ariane_pkg::*; #(
 
   int f;
   logic [63:0] cycles;
+  logic [63:0] last_cycles;
 
 `ifdef DROMAJO
   initial begin
@@ -861,6 +862,7 @@ module ariane import ariane_pkg::*; #(
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (~rst_ni) begin
       cycles <= 0;
+      last_cycles <= 0;
     end else begin
       string mode = "";
       if (debug_mode) mode = "D";
@@ -874,13 +876,18 @@ module ariane import ariane_pkg::*; #(
       for (int i = 0; i < NR_COMMIT_PORTS; i++) begin
         if (commit_ack[i] && !commit_instr_id_commit[i].ex.valid) begin
           // < Actual Cycle > < Nb Of cycles Spent on this insn > < Mode > <0xOpCode> <DASM(OpCode)>
-          $fwrite(f, "%d 0x%0h %s (0x%h) DASM(%h)\n", cycles, commit_instr_id_commit[i].pc, mode, commit_instr_id_commit[i].ex.tval[31:0], commit_instr_id_commit[i].ex.tval[31:0]);
+          if(mode == "U")
+          begin
+            $fwrite(f, "%d %d 0x%0h %s (0x%h) DASM(%h)\n", cycles, (cycles-last_cycles), commit_instr_id_commit[i].pc, mode, commit_instr_id_commit[i].ex.tval[31:0], commit_instr_id_commit[i].ex.tval[31:0]);
+          end
+          last_cycles <= cycles;
         end else if (commit_ack[i] && commit_instr_id_commit[i].ex.valid) begin
           if (commit_instr_id_commit[i].ex.cause == 2) begin
             $fwrite(f, "Exception Cause: Illegal Instructions, DASM(%h) PC=%h\n", commit_instr_id_commit[i].ex.tval[31:0], commit_instr_id_commit[i].pc);
           end else begin
             if (debug_mode) begin
-              $fwrite(f, "%d 0x%0h %s (0x%h) DASM(%h)\n", cycles, commit_instr_id_commit[i].pc, mode, commit_instr_id_commit[i].ex.tval[31:0], commit_instr_id_commit[i].ex.tval[31:0]);
+              // $fwrite(f, "%d %d 0x%0h %s (0x%h) DASM(%h)\n", cycles, (cycles-last_cycles), commit_instr_id_commit[i].pc, mode, commit_instr_id_commit[i].ex.tval[31:0], commit_instr_id_commit[i].ex.tval[31:0]);
+              last_cycles <= cycles;
             end else begin
               $fwrite(f, "Exception Cause: %5d, DASM(%h) PC=%h\n", commit_instr_id_commit[i].ex.cause, commit_instr_id_commit[i].ex.tval[31:0], commit_instr_id_commit[i].pc);
             end
