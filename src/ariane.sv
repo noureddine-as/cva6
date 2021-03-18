@@ -876,9 +876,13 @@ module ariane import ariane_pkg::*; #(
       for (int i = 0; i < NR_COMMIT_PORTS; i++) begin
         if (commit_ack[i] && !commit_instr_id_commit[i].ex.valid) begin
           // < Actual Cycle > < Nb Of cycles Spent on this insn > < Mode > <0xOpCode> <DASM(OpCode)>
-          if(mode == "U")
+          if(mode == "M")
           begin
             $fwrite(f, "%d %d 0x%0h %s (0x%h) DASM(%h)\n", cycles, (cycles-last_cycles), commit_instr_id_commit[i].pc, mode, commit_instr_id_commit[i].ex.tval[31:0], commit_instr_id_commit[i].ex.tval[31:0]);
+            if(commit_instr_id_commit[i].fu == CSR)
+            begin
+              $fwrite(f, " CSR addr %0h wdata %0h rdata %0h\n", csr_addr_ex_csr, csr_wdata_commit_csr, csr_rdata_csr_commit);            
+            end
           end
           last_cycles <= cycles;
         end else if (commit_ack[i] && commit_instr_id_commit[i].ex.valid) begin
