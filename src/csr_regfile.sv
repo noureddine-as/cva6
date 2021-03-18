@@ -54,6 +54,12 @@ module csr_regfile import ariane_pkg::*; #(
     output logic [4:0]            fflags_o,                   // Floating-Point Accured Exceptions
     output logic [2:0]            frm_o,                      // Floating-Point Dynamic Rounding Mode
     output logic [6:0]            fprec_o,                    // Floating-Point Precision Control
+    // VPT Custom Registers ---------------------------------------------------------------------------
+    // fvpt_status
+    output logic [63:0]           fvpt_prec_f_o,
+    output logic [63:0]           fvpt_prec_d_o,
+    output logic [63:0]           fvpt_exec_mode_o,
+    // ------------------------------------------------------------------------------------------------
     // Decoder
     output irq_ctrl_t             irq_ctrl_o,                 // interrupt management to id stage
     // MMU
@@ -1089,6 +1095,11 @@ module csr_regfile import ariane_pkg::*; #(
     assign fflags_o         = fcsr_q.fflags;
     assign frm_o            = fcsr_q.frm;
     assign fprec_o          = fcsr_q.fprec;
+    // VPT Custom Registers ---------------------------------------------------------
+    assign fvpt_prec_f_o    = fcsr_q.fvpt_prec_f;
+    assign fvpt_prec_d_o    = fcsr_q.fvpt_prec_d;
+    assign fvpt_exec_mode_o = fcsr_q.fvpt_exec_mode;
+    // ------------------------------------------------------------------------------
     // MMU outputs
     assign satp_ppn_o       = satp_q.ppn;
     assign asid_o           = satp_q.asid[AsidWidth-1:0];

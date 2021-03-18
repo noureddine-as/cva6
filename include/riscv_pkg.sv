@@ -525,10 +525,10 @@ package riscv;
         logic [2:0]   frm;       // float rounding mode
         logic [4:0]   fflags;    // float exception flags
         // VPT Custom Registers ---------------------------------
-        // logic [63:0]  vpt_status;
-        logic [63:0]  fvpt_prec_f;
-        logic [63:0]  fvpt_prec_d;
-        logic [63:0]  fvpt_exec_mode;
+        // logic [63:0]  vpt_status;  // Enable/Disable VPT 
+        logic [63:0]  fvpt_prec_f;    // Controls float precision
+        logic [63:0]  fvpt_prec_d;    // Controls double precision
+        logic [63:0]  fvpt_exec_mode; // Controls the Instrumentation
         // -----------------------------------------------------
     } fcsr_t;
 

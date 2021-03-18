@@ -163,6 +163,12 @@ module ariane import ariane_pkg::*; #(
   riscv::xs_t               fs;
   logic [2:0]               frm_csr_id_issue_ex;
   logic [6:0]               fprec_csr_ex;
+  // VPT Custom Registers ---------------------------------------
+  // @TODO vpt_status
+  logic [63:0]              fvpt_prec_f_csr_ex;
+  logic [63:0]              fvpt_prec_d_csr_ex;
+  logic [63:0]              fvpt_exec_mode_csr_ex;
+  // ------------------------------------------------------------
   logic                     enable_translation_csr_ex;
   logic                     en_ld_st_translation_csr_ex;
   riscv::priv_lvl_t         ld_st_priv_lvl_csr_ex;
@@ -520,6 +526,12 @@ module ariane import ariane_pkg::*; #(
     .fflags_o               ( fflags_csr_commit             ),
     .frm_o                  ( frm_csr_id_issue_ex           ),
     .fprec_o                ( fprec_csr_ex                  ),
+    // VPT Custom Registers --------------------------------------------------
+    // @TODO vpt_status
+    .fvpt_prec_f_o          ( fvpt_prec_f_csr_ex            ),
+    .fvpt_prec_d_o          ( fvpt_prec_d_csr_ex            ),
+    .fvpt_exec_mode_o       ( fvpt_exec_mode_csr_ex         ),
+    // -----------------------------------------------------------------------
     .irq_ctrl_o             ( irq_ctrl_csr_id               ),
     .ld_st_priv_lvl_o       ( ld_st_priv_lvl_csr_ex         ),
     .en_translation_o       ( enable_translation_csr_ex     ),
@@ -876,13 +888,36 @@ module ariane import ariane_pkg::*; #(
       for (int i = 0; i < NR_COMMIT_PORTS; i++) begin
         if (commit_ack[i] && !commit_instr_id_commit[i].ex.valid) begin
           // < Actual Cycle > < Nb Of cycles Spent on this insn > < Mode > <0xOpCode> <DASM(OpCode)>
-          if(mode == "M")
+          if(mode == "U")
           begin
             $fwrite(f, "%d %d 0x%0h %s (0x%h) DASM(%h)\n", cycles, (cycles-last_cycles), commit_instr_id_commit[i].pc, mode, commit_instr_id_commit[i].ex.tval[31:0], commit_instr_id_commit[i].ex.tval[31:0]);
-            if(commit_instr_id_commit[i].fu == CSR)
+            if(   (     commit_instr_id_commit[i].fu == CSR          ) 
+              &&  (   ( commit_instr_id_commit[i].op == CSR_WRITE )
+                   || ( commit_instr_id_commit[i].op == CSR_SET   )
+                   || ( commit_instr_id_commit[i].op == CSR_CLEAR )  )   )
             begin
-              $fwrite(f, " CSR addr %0h wdata %0h rdata %0h\n", csr_addr_ex_csr, csr_wdata_commit_csr, csr_rdata_csr_commit);            
+              if ( csr_addr_ex_csr == riscv::CSR_FVPT_PREC_F ) begin
+                $fwrite(f, "VPTMAGICOP write fvpt_prec_f %0h oldval %0h\n", csr_wdata_commit_csr, csr_rdata_csr_commit);
+              end 
+              else if (csr_addr_ex_csr == riscv::CSR_FVPT_PREC_D) begin
+                $fwrite(f, "VPTMAGICOP write fvpt_prec_d %0h oldval %0h\n", csr_wdata_commit_csr, csr_rdata_csr_commit);
+              end
+              else if (csr_addr_ex_csr == riscv::CSR_FVPT_EXEC_MODE) begin
+                $fwrite(f, "VPTMAGICOP write fvpt_exec_mode %0h oldval %0h\n", csr_wdata_commit_csr, csr_rdata_csr_commit);
+              end
             end
+            // if(   (     commit_instr_id_commit[i].fu == CSR             ) 
+            //   &&  (   ( commit_instr_id_commit[i].fu_op == CSR_WRITE    )
+            //        || ( commit_instr_id_commit[i].fu_op == CSR_SET )
+            //        || ( commit_instr_id_commit[i].fu_op == CSR_CLEAR )  )
+            //   &&  (   ( csr_addr_ex_csr == riscv::CSR_FVPT_PREC_F )
+            //        || ( csr_addr_ex_csr == riscv::CSR_FVPT_PREC_D )
+            //        || ( csr_addr_ex_csr == riscv::CSR_FVPT_EXEC_MODE )  )   )
+            // begin
+            //   $fwrite(f, "VPTMAGICOP fvpt_prec_f %0h fvpt_prec_d %0h fvpt_exec_mode %0h\n", fvpt_prec_f_csr_ex, fvpt_prec_d_csr_ex, fvpt_exec_mode_csr_ex);
+            //   $fwrite(f, "VPTCOMMIT  fvpt_prec_f %0h fvpt_prec_d %0h fvpt_exec_mode %0h\n", fvpt_prec_f_csr_ex, fvpt_prec_d_csr_ex, fvpt_exec_mode_csr_ex);
+            //   $fwrite(f, " CSR addr %0h wdata %0h rdata %0h\n", csr_addr_ex_csr, csr_wdata_commit_csr, csr_rdata_csr_commit);            
+            // end
           end
           last_cycles <= cycles;
         end else if (commit_ack[i] && commit_instr_id_commit[i].ex.valid) begin
