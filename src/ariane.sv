@@ -839,7 +839,11 @@ module ariane import ariane_pkg::*; #(
   initial begin
     // STDOUT == 32'h8000_0001
     // STDERR == 32'h8000_0002
-    f = 32'h8000_0002; // $fopen("trace_hart_00.dasm", "w");
+    `ifdef VPT_INSTRUMENTATION
+      f = 32'h8000_0002; // Print out to STDERR
+    `else
+      f = $fopen("trace_hart_00.dasm", "w");
+    `endif
   end
 
 `ifdef DROMAJO
@@ -891,21 +895,24 @@ module ariane import ariane_pkg::*; #(
           if(mode == "U")
           begin
             $fwrite(f, "%d %d 0x%0h %s (0x%h) DASM(%h)\n", cycles, (cycles-last_cycles), commit_instr_id_commit[i].pc, mode, commit_instr_id_commit[i].ex.tval[31:0], commit_instr_id_commit[i].ex.tval[31:0]);
-            if(   (     commit_instr_id_commit[i].fu == CSR          ) 
-              &&  (   ( commit_instr_id_commit[i].op == CSR_WRITE )
-                   || ( commit_instr_id_commit[i].op == CSR_SET   )
-                   || ( commit_instr_id_commit[i].op == CSR_CLEAR )  )   )
-            begin
-              if ( csr_addr_ex_csr == riscv::CSR_FVPT_PREC_F ) begin
-                $fwrite(f, "VPTMAGICOP write fvpt_prec_f %0h oldval %0h\n", csr_wdata_commit_csr, csr_rdata_csr_commit);
-              end 
-              else if (csr_addr_ex_csr == riscv::CSR_FVPT_PREC_D) begin
-                $fwrite(f, "VPTMAGICOP write fvpt_prec_d %0h oldval %0h\n", csr_wdata_commit_csr, csr_rdata_csr_commit);
+            
+            `ifdef VPT_INSTRUMENTATION
+              if(   (     commit_instr_id_commit[i].fu == CSR          ) 
+                &&  (   ( commit_instr_id_commit[i].op == CSR_WRITE )
+                    || ( commit_instr_id_commit[i].op == CSR_SET   )
+                    || ( commit_instr_id_commit[i].op == CSR_CLEAR )  )   )
+              begin
+                if ( csr_addr_ex_csr == riscv::CSR_FVPT_PREC_F ) begin
+                  $fwrite(f, "VPTMAGICOP write fvpt_prec_f %0h oldval %0h\n", csr_wdata_commit_csr, csr_rdata_csr_commit);
+                end 
+                else if (csr_addr_ex_csr == riscv::CSR_FVPT_PREC_D) begin
+                  $fwrite(f, "VPTMAGICOP write fvpt_prec_d %0h oldval %0h\n", csr_wdata_commit_csr, csr_rdata_csr_commit);
+                end
+                else if (csr_addr_ex_csr == riscv::CSR_FVPT_EXEC_MODE) begin
+                  $fwrite(f, "VPTMAGICOP write fvpt_exec_mode %0h oldval %0h\n", csr_wdata_commit_csr, csr_rdata_csr_commit);
+                end
               end
-              else if (csr_addr_ex_csr == riscv::CSR_FVPT_EXEC_MODE) begin
-                $fwrite(f, "VPTMAGICOP write fvpt_exec_mode %0h oldval %0h\n", csr_wdata_commit_csr, csr_rdata_csr_commit);
-              end
-            end
+            `endif
             // if(   (     commit_instr_id_commit[i].fu == CSR             ) 
             //   &&  (   ( commit_instr_id_commit[i].fu_op == CSR_WRITE    )
             //        || ( commit_instr_id_commit[i].fu_op == CSR_SET )
