@@ -1,7 +1,6 @@
 
 
-Example commands:
-
+We have a complete simulation flow now, which executes a PK application on top of the Verilated model and spits out execution traces of a specific Region of Interest, sur$
 
 ### In order to re-generate the plots only
 
