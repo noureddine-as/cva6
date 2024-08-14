@@ -170,6 +170,13 @@ module ariane_xilinx (
   input  logic [ 7:0]  sw          ,
   output logic         fan_pwm     ,
   input  logic         trst_n      ,
+`elsif ARTY_A7
+  input  logic         sys_clk_i   ,
+  input  logic         cpu_resetn  ,
+
+  output logic [3:0]   led         ,
+  input  logic [3:0]   sw          ,
+  input  logic         trst_n      ,
 `endif
   // SPI
   output logic        spi_mosi    ,
@@ -279,6 +286,9 @@ assign cpu_resetn = ~cpu_reset;
 assign cpu_resetn = ~cpu_reset;
 assign trst_n = ~trst;
 `elsif NEXYS_VIDEO
+logic cpu_reset;
+assign cpu_reset  = ~cpu_resetn;
+`elsif ARTY_A7
 logic cpu_reset;
 assign cpu_reset  = ~cpu_resetn;
 `endif
@@ -855,6 +865,19 @@ end
 `ifdef KC705
   logic [7:0] unused_led;
   logic [3:0] unused_switches = 4'b0000;
+`elsif ARTY_A7
+  logic [3:0] unused_led;
+  logic [3:0] unused_switches = 4'b0000;
+  // The following signals are not exposed at the top level
+  logic          eth_rst_n;
+  logic          eth_rxck;
+  logic          eth_rxctl;
+  logic [3:0]    eth_rxd;
+  logic          eth_txck;
+  logic          eth_txctl;
+  logic [3:0]    eth_txd;
+  logic          eth_mdio;
+  logic          eth_mdc;
 `endif
 
 logic clk_200MHz_ref;
@@ -879,6 +902,9 @@ ariane_peripherals #(
     .InclSPI      ( 1'b0         ),
     .InclEthernet ( 1'b0         )
     `elsif NEXYS_VIDEO
+    .InclSPI      ( 1'b1         ),
+    .InclEthernet ( 1'b0         )
+    `elsif ARTY_A7
     .InclSPI      ( 1'b1         ),
     .InclEthernet ( 1'b0         )
     `endif
@@ -914,6 +940,9 @@ ariane_peripherals #(
     `ifdef KC705
       .leds_o         ( {led[3:0], unused_led[7:4]}),
       .dip_switches_i ( {sw, unused_switches}     )
+    `elsif ARTY_A7
+      .leds_o         ( {led, unused_led}),
+      .dip_switches_i ( {sw, unused_switches})
     `else
       .leds_o         ( led                       ),
       .dip_switches_i ( sw                        )
@@ -1133,6 +1162,19 @@ xlnx_axi_clock_converter i_xlnx_axi_clock_converter_ddr (
 );
 
 `ifdef NEXYS_VIDEO
+xlnx_clk_gen i_xlnx_clk_gen (
+  .clk_out1 ( clk             ), // 25 MHz
+  .clk_out2 ( phy_tx_clk      ), // 125 MHz (for RGMII PHY)
+  .clk_out3 ( eth_clk         ), // 125 MHz quadrature (90 deg phase shift)
+  .clk_out4 ( sd_clk_sys      ), // 50 MHz clock
+  .clk_out5 ( clk_200MHz_ref  ), // 200 MHz clock
+  .reset    ( cpu_reset       ),
+  .locked   ( pll_locked      ),
+  .clk_in1  ( ddr_clock_out   )  // 100MHz input clock
+);
+
+`elsif ARTY_A7
+
 xlnx_clk_gen i_xlnx_clk_gen (
   .clk_out1 ( clk             ), // 25 MHz
   .clk_out2 ( phy_tx_clk      ), // 125 MHz (for RGMII PHY)
