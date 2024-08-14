@@ -38,7 +38,7 @@ test-location  ?= output/test
 torture-logs   :=
 # custom elf bin to run with sim or sim-verilator
 elf_file        ?= tmp/riscv-tests/build/benchmarks/dhrystone.riscv
-# board name for bitstream generation. Currently supported: kc705, genesys2, nexys_video
+# board name for bitstream generation. Currently supported: kc705, genesys2, nexys_video, vc707, arty_a7
 BOARD          ?= genesys2
 
 # root path
@@ -83,6 +83,11 @@ else ifeq ($(BOARD), nexys_video)
 	XILINX_PART              := xc7a200tsbg484-1
 	XILINX_BOARD             := digilentinc.com:nexys_video:part0:1.1
 	CLK_PERIOD_NS            := 40
+else ifeq ($(BOARD), arty_a7)
+	XILINX_PART              := xc7a100ticsg324-1L
+	XILINX_BOARD             := digilentinc.com:arty-a7-100:part0:1.0
+	CLK_PERIOD_NS            := 20
+	target 					 ?= cv32a6_ima_sv32_fpga
 else
 $(error Unknown board - please specify a supported FPGA board)
 endif
